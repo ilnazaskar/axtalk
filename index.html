@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Мини-звонилка (Firebase + WebRTC)</title>
+<title>AxTalk</title>
 <meta name="theme-color" content="#0c0f14" />
 <style>
 :root{
@@ -51,7 +51,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .dot{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:99px;background:#586174;border:1px solid var(--bg-2)}
 .dot.on{background:#1bd35f}
 
-/* incoming modal */
+/* incoming modal (calls) */
 .modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;padding:18px}
 .modal.show{display:grid}
 .sheet{width:100%;max-width:420px;background:var(--bg-2);border:1px solid var(--outline);border-radius:18px;padding:18px;display:grid;gap:12px;justify-items:center}
@@ -91,6 +91,9 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .range{width:160px}
 .hidden{display:none!important}
 audio{display:none}
+
+/* simple input */
+input[type="text"]{color:var(--text)}
 </style>
 </head>
 <body>
@@ -100,8 +103,7 @@ audio{display:none}
     <!-- AUTH -->
     <section class="screen active" id="screen-auth">
       <div class="hero">
-        <div class="title">Мини-звонилка</div>
-        <div class="note">Войдите через Google, выберите друга и позвоните. Сигналинг — Firestore, аудио — WebRTC через STUN Google. Видео и чат отключены.</div>
+        <div class="title">AxTalk</div>
         <button id="btn-google" class="btn primary google">
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.245,32.091,29.065,35,24,35c-6.075,0-11-4.925-11-11 s4.925-11,11-11c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657C33.555,6.053,28.973,4,24,4C12.955,4,4,12.955,4,24 s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,16.108,18.961,13,24,13c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657 C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c4.942,0,9.448-1.897,12.837-4.993l-5.926-5.018C29.006,35.091,26.668,36,24,36 c-5.041,0-9.21-2.899-11.281-7.074l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-1.018,2.908-3.168,5.266-5.89,6.724 c0.001-0.001,0.002-0.001,0.003-0.002l5.926,5.018C34.971,40.149,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
           Войти через Google
@@ -112,15 +114,34 @@ audio{display:none}
     <!-- FRIENDS -->
     <section class="screen" id="screen-friends">
       <div class="pad stack">
+
         <div class="row" style="justify-content:space-between">
           <div id="meBadge" class="badge">…</div>
           <button id="btn-signout" class="btn">Выйти</button>
         </div>
+
+        <!-- Профиль: ник + UID + копирование -->
+        <div class="card" id="profile-card">
+          <div class="stack">
+            <div class="row" style="justify-content:space-between;align-items:flex-end">
+              <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+                <label for="meName" class="note" style="text-align:left">Ваш ник</label>
+                <input id="meName" type="text" placeholder="Введите ник" style="all:unset;background:var(--bg-2);border:1px solid var(--outline);padding:10px 12px;border-radius:12px"/>
+              </div>
+              <button id="btn-save-name" class="btn" style="margin-left:10px">Сохранить</button>
+            </div>
+            <div class="row" style="justify-content:space-between">
+              <div class="note" style="text-align:left">Ваш ID: <code id="meUid">...</code></div>
+              <button id="btn-copy-uid" class="btn" title="Скопировать ID">Копировать</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
-          <div class="row" style="justify-content:space-between"><b>Друзья</b><button id="btn-add-friend" class="btn">Добавить по email</button></div>
+          <div class="row" style="justify-content:space-between"><b>Друзья</b><button id="btn-add-friend" class="btn">Добавить друга</button></div>
           <div id="friends" class="stack"></div>
         </div>
-        <div class="note">Хранилище: Firestore — <code>users/{uid}/friends</code>. Онлайн-индикатор — упрощённый (пинг раз в 20с).</div>
+
       </div>
     </section>
 
@@ -144,7 +165,7 @@ audio{display:none}
       </div>
     </section>
 
-    <!-- Incoming modal -->
+    <!-- Incoming call modal -->
     <div id="incoming" class="modal">
       <div class="sheet">
         <div class="bigava" id="inc-ava">?</div>
@@ -156,12 +177,39 @@ audio{display:none}
       </div>
     </div>
 
-    <!-- Peer mini-menu -->
+    <!-- Peer mini-menu (in-call) -->
     <div id="peer-menu" class="smallmenu">
       <div class="row"><div id="pm-name">Имя</div><div id="pm-time">0:00</div></div>
       <div class="hr"></div>
       <div class="row"><span>Громкость</span><input id="pm-volume" class="range" type="range" min="0" max="1" step="0.01" /></div>
       <div class="row" style="justify-content:flex-end"><button id="pm-close" class="btn">Закрыть</button></div>
+    </div>
+
+    <!-- Add Friend modal -->
+    <div id="addfriend" class="modal">
+      <div class="sheet" style="width:100%;max-width:420px;gap:10px">
+        <div style="font-weight:700">Добавить друга</div>
+        <div class="note">Вставьте уникальный ID друга</div>
+        <input id="af-id" type="text" placeholder="ID друга (UID)" style="all:unset;background:var(--bg-2);border:1px solid var(--outline);padding:10px 12px;border-radius:12px;width:100%"/>
+        <div class="actions">
+          <button id="af-add" class="act accept" title="Добавить">+</button>
+          <button id="af-cancel" class="act decline" title="Отмена">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Friend menu (note & delete) -->
+    <div id="friend-menu" class="smallmenu">
+      <div class="row" style="justify-content:space-between"><b id="fm-name">Ник</b><button id="fm-close" class="btn">✕</button></div>
+      <div class="hr"></div>
+      <div class="row" style="justify-content:space-between">
+        <span class="note">Пометка</span>
+        <input id="fm-note" class="range" type="text" placeholder="например: Никита" style="width:180px"/>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button id="fm-save" class="btn primary">Сохранить</button>
+        <button id="fm-delete" class="btn" style="border-color:var(--red);color:#fff;background:#2a1111">Удалить из друзей</button>
+      </div>
     </div>
 
     <!-- hidden audio sinks -->
@@ -182,13 +230,13 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCezq2wfC4p2ucVz5wzreoaxBTzvHjkwzg",
-  authDomain: "call-19b9a.firebaseapp.com",
-  projectId: "call-19b9a",
-  storageBucket: "call-19b9a.firebasestorage.app",
-  messagingSenderId: "264482012809",
-  appId: "1:264482012809:web:d0a30eabbd3184944a5058",
-  measurementId: "G-TDP7N49324"
+  /* ВСТАВЬ СВОИ КЛЮЧИ ПРОЕКТА */
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -212,16 +260,16 @@ async function setPresence(user){
 }
 
 /* ===== Auth UI ===== */
-$('#btn-google').onclick = async ()=>{
-  await signInWithPopup(auth, new GoogleAuthProvider());
-};
+$('#btn-google').onclick = async ()=>{ await signInWithPopup(auth, new GoogleAuthProvider()); };
 $('#btn-signout').onclick = ()=> signOut(auth);
 
 onAuthStateChanged(auth, async (user)=>{
   if(!user){ show('#screen-auth'); return; }
   await setPresence(user);
   $('#meBadge').textContent = user.displayName || user.email || user.uid;
-  loadFriends();
+  await loadProfile();
+  await loadFriends();
+  listenIncoming(); // звонки
   show('#screen-friends');
 });
 
@@ -229,39 +277,114 @@ onAuthStateChanged(auth, async (user)=>{
 async function loadFriends(){
   const list=$('#friends'); list.innerHTML='';
   const fs = await getDocs(collection(db,'users',auth.currentUser.uid,'friends'));
-  if(fs.empty){ list.innerHTML = '<div class="note">Список пуст. Нажмите «Добавить по email».</div>'; return; }
+  if(fs.empty){ list.innerHTML = '<div class="note">Список пуст. Нажмите «Добавить друга».</div>'; return; }
   fs.forEach(snap=>{
     const fr = snap.data();
     const el=document.createElement('div');
     el.className='friend';
+    const friendLabel = `${fr.name || 'Без имени'}${fr.note ? ' ~ ' + fr.note : ''}`;
     el.innerHTML=`
       <div class="who">
-        <div class="ava"><span>${initials(fr.name||fr.email)}</span><span class="dot ${fr.online?'on':''}"></span></div>
+        <div class="ava"><span>${initials(fr.name||'')}</span><span class="dot ${fr.online?'on':''}"></span></div>
         <div>
-          <div><b>${fr.name||fr.email}</b></div>
-          <div class="note">${fr.email||''}</div>
+          <div><b>${friendLabel}</b></div>
+          <div class="note">ID: ${fr.uid}</div>
         </div>
       </div>
-      <button class="btn primary" data-call="${fr.uid}">Позвонить</button>
+      <div class="row">
+        <button class="btn primary" data-call="${fr.uid}" title="Позвонить">Позвонить</button>
+        <button class="btn" data-edit="${fr.uid}" title="Редактировать пометку">✎</button>
+      </div>
     `;
-    el.querySelector('button').onclick = ()=> startCallWith(fr.uid);
+    el.querySelector('[data-call]').onclick = ()=> startCallWith(fr.uid);
+    el.querySelector('[data-edit]').onclick = ()=> openFriendMenu(fr.uid, fr.name||'Без имени', fr.note||'');
     list.appendChild(el);
   });
 }
 
-$('#btn-add-friend').onclick = async ()=>{
-  const email = prompt('Email друга (должен уже входить хотя бы раз):');
-  if(!email) return;
-  // Находим пользователя по email (для простоты — коллекция users хранит email).
-  const q = query(collection(db,'users'), where('email','==',email), limit(1));
-  const res = await getDocs(q);
-  if(res.empty) return alert('Пользователь не найден.');
-  const u = res.docs[0].data();
-  await setDoc(doc(db,'users',auth.currentUser.uid,'friends',u.uid), { uid:u.uid, name:u.name||u.email, email:u.email||null, online:!!u.online }, {merge:true});
+/* кнопка "Добавить друга" -> модалка */
+$('#btn-add-friend').onclick = ()=>{
+  $('#af-id').value='';
+  $('#addfriend').classList.add('show');
+};
+$('#af-cancel').onclick = ()=> $('#addfriend').classList.remove('show');
+$('#af-add').onclick = async ()=>{
+  const fid = $('#af-id').value.trim();
+  if(!fid) return;
+  if(fid === auth.currentUser.uid) { alert('Нельзя добавить себя'); return; }
+
+  const fProfileRef = doc(db,'users',fid);
+  const fSnap = await getDoc(fProfileRef);
+  if(!fSnap.exists()){ alert('Пользователь с таким ID не найден'); return; }
+  const fData = fSnap.data();
+
+  const mySnap = await getDoc(doc(db,'users',auth.currentUser.uid));
+  const myData = mySnap.data()||{};
+
+  // записать у себя
+  await setDoc(doc(db,'users',auth.currentUser.uid,'friends',fid), {
+    uid: fid, name: fData.name || fData.email || 'Без имени', note:'', online: !!fData.online
+  }, {merge:true});
+
+  // попытаться записать у друга (взаимно)
+  try{
+    await setDoc(doc(db,'users',fid,'friends',auth.currentUser.uid), {
+      uid: auth.currentUser.uid, name: myData.name || myData.email || 'Без имени', note:'', online:true
+    }, {merge:true});
+  }catch(e){
+    console.warn('Mutual add failed (rules?):', e);
+    // запасной вариант — заявка в друзья
+    try{
+      await addDoc(collection(db,'users',fid,'invites'), { type:'friend', from: auth.currentUser.uid, name: myData.name||null, t: serverTimestamp(), status:'pending' });
+      alert('Запрос дружбы отправлен. У друга появится приглашение.');
+    }catch(_){}
+  }
+
+  $('#addfriend').classList.remove('show');
   loadFriends();
 };
 
-/* ===== Signaling model =====
+/* меню друга — пометка / удаление */
+let fmCurrent=null;
+function openFriendMenu(uid, name, note){
+  fmCurrent = uid;
+  $('#fm-name').textContent = name;
+  $('#fm-note').value = note || '';
+  $('#friend-menu').classList.add('show');
+}
+$('#fm-close').onclick = ()=> { $('#friend-menu').classList.remove('show'); fmCurrent=null; };
+$('#fm-save').onclick = async ()=>{
+  if(!fmCurrent) return;
+  await updateDoc(doc(db,'users',auth.currentUser.uid,'friends',fmCurrent), { note: $('#fm-note').value.trim() });
+  $('#friend-menu').classList.remove('show'); fmCurrent=null; loadFriends();
+};
+$('#fm-delete').onclick = async ()=>{
+  if(!fmCurrent) return;
+  if(!confirm('Удалить из друзей?')) return;
+  await deleteDoc(doc(db,'users',auth.currentUser.uid,'friends',fmCurrent));
+  try{ await deleteDoc(doc(db,'users',fmCurrent,'friends',auth.currentUser.uid)); }catch(e){ console.warn('Mutual delete failed (rules?)', e); }
+  $('#friend-menu').classList.remove('show'); fmCurrent=null; loadFriends();
+};
+
+/* ===== Профиль (ник, UID, копировать) ===== */
+async function loadProfile(){
+  const uref=doc(db,'users',auth.currentUser.uid);
+  const usnap=await getDoc(uref);
+  const udata=usnap.data()||{};
+  $('#meName').value = udata.name || auth.currentUser.displayName || '';
+  $('#meUid').textContent = auth.currentUser.uid;
+}
+$('#btn-save-name').onclick = async ()=>{
+  const name = $('#meName').value.trim() || 'Без имени';
+  await setDoc(doc(db,'users',auth.currentUser.uid), { name }, {merge:true});
+  $('#meBadge').textContent = name;
+  await loadFriends();
+};
+$('#btn-copy-uid').onclick = async ()=>{
+  try{ await navigator.clipboard.writeText(auth.currentUser.uid); $('#btn-copy-uid').textContent='Скопировано'; setTimeout(()=>$('#btn-copy-uid').textContent='Копировать',1200);}catch{}
+};
+
+/* ===== Signaling model (calls) =====
 calls/{callId}:
   { createdBy, startedAt, active:true }
   members/{uid}: { uid, name, joinedAt }
@@ -289,51 +412,45 @@ async function ensureMedia(){
 }
 
 async function startCallWith(targetUid){
-  // Create call doc + invite
   const ref = await addDoc(collection(db,'calls'), {
     createdBy: auth.currentUser.uid,
     startedAt: serverTimestamp(),
     active:true
   });
   callId = ref.id;
-  // creator joins as member
   await setDoc(doc(db,'calls',callId,'members',auth.currentUser.uid), {
-    uid: auth.currentUser.uid, name: auth.currentUser.displayName||'Me', joinedAt: serverTimestamp()
+    uid: auth.currentUser.uid, name: auth.currentUser.displayName||$('#meName').value||'Me', joinedAt: serverTimestamp()
   });
-  // invite target
-  await addDoc(collection(db,'users',targetUid,'invites'), { callId, from: auth.currentUser.uid, t: serverTimestamp(), status:'pending' });
-  listenIncoming(); // to update modal if another invite arrives later
+  await addDoc(collection(db,'users',targetUid,'invites'), { type:'call', callId, from: auth.currentUser.uid, t: serverTimestamp(), status:'pending' });
   enterCallUI(callId);
 }
 
 function listenIncoming(){
-  // Listen to my invites
   const invCol = collection(db,'users',auth.currentUser.uid,'invites');
   onSnapshot(invCol, (snap)=>{
     snap.docChanges().forEach(ch => {
       const inv = ch.doc.data();
-      if(ch.type==='added' && inv.status==='pending'){
-        $('#incoming').classList.add('show');
-        $('#inc-name').textContent = 'Звонок';
-        $('#inc-ava').textContent = '☎';
-        $('#inc-accept').onclick = async ()=>{
-          $('#incoming').classList.remove('show');
-          callId = inv.callId;
-          await setDoc(doc(db,'users',auth.currentUser.uid,'invites', ch.doc.id), {status:'accepted'}, {merge:true});
-          await setDoc(doc(db,'calls',callId,'members',auth.currentUser.uid), {
-            uid: auth.currentUser.uid, name: auth.currentUser.displayName||'Me', joinedAt: serverTimestamp()
-          });
-          enterCallUI(callId);
-        };
-        $('#inc-decline').onclick = async ()=>{
-          $('#incoming').classList.remove('show');
-          await setDoc(doc(db,'users',auth.currentUser.uid,'invites', ch.doc.id), {status:'declined'}, {merge:true});
-        };
-      }
+      if(ch.type!=='added' || inv.status!=='pending') return;
+      if(!inv.callId) return; // игнорим friend-заявки здесь
+      $('#incoming').classList.add('show');
+      $('#inc-name').textContent = 'Звонок';
+      $('#inc-ava').textContent = '☎';
+      $('#inc-accept').onclick = async ()=>{
+        $('#incoming').classList.remove('show');
+        callId = inv.callId;
+        await setDoc(doc(db,'users',auth.currentUser.uid,'invites', ch.doc.id), {status:'accepted'}, {merge:true});
+        await setDoc(doc(db,'calls',callId,'members',auth.currentUser.uid), {
+          uid: auth.currentUser.uid, name: auth.currentUser.displayName||$('#meName').value||'Me', joinedAt: serverTimestamp()
+        });
+        enterCallUI(callId);
+      };
+      $('#inc-decline').onclick = async ()=>{
+        $('#incoming').classList.remove('show');
+        await setDoc(doc(db,'users',auth.currentUser.uid,'invites', ch.doc.id), {status:'declined'}, {merge:true});
+      };
     });
   });
 }
-listenIncoming();
 
 async function enterCallUI(id){
   await ensureMedia();
@@ -341,7 +458,7 @@ async function enterCallUI(id){
   $('#callTitle').textContent = `Комната #${id.slice(0,6)}`;
   startTimer();
   renderPeersBar(); // me
-  // members listener
+
   onSnapshot(collection(db,'calls',id,'members'), (snap)=>{
     snap.docChanges().forEach(ch=>{
       const d=ch.doc.data();
@@ -349,31 +466,25 @@ async function enterCallUI(id){
       if(ch.type==='removed'){ removePeer(d.uid); }
     });
   });
-  // Add myself if not there
+
   const myRef = doc(db,'calls',id,'members',auth.currentUser.uid);
   const myDoc = await getDoc(myRef);
-  if(!myDoc.exists()) await setDoc(myRef,{ uid:auth.currentUser.uid, name: auth.currentUser.displayName||'Me', joinedAt: serverTimestamp() });
+  if(!myDoc.exists()) await setDoc(myRef,{ uid:auth.currentUser.uid, name: $('#meName').value||'Me', joinedAt: serverTimestamp() });
 
-  // Invite button opens simple prompt
+  // Приглашение по ID
   $('#btn-invite').onclick = async ()=>{
-    const email = prompt('Кого пригласить? Email:');
-    if(!email) return;
-    const q=query(collection(db,'users'), where('email','==',email), limit(1));
-    const res=await getDocs(q);
-    if(res.empty) return alert('Не найден.');
-    const u=res.docs[0].data();
-    await addDoc(collection(db,'users',u.uid,'invites'), { callId:id, from:auth.currentUser.uid, t:serverTimestamp(), status:'pending' });
+    const fid = prompt('ID друга для приглашения (UID):');
+    if(!fid) return;
+    await addDoc(collection(db,'users',fid,'invites'), { type:'call', callId:id, from:auth.currentUser.uid, t:serverTimestamp(), status:'pending' });
     alert('Приглашение отправлено.');
   };
 
-  // End button
   $('#btn-end').onclick = async ()=>{
     pcs.forEach(pc=>pc.close()); pcs.clear();
     stopTimer();
     show('#screen-friends');
   };
 
-  // Mic toggle
   $('#btn-mic').onclick = ()=>{
     const enabled = micTrack.enabled;
     micTrack.enabled = !enabled;
@@ -384,8 +495,7 @@ async function enterCallUI(id){
 
 function renderPeersBar(){
   const c=$('#peers'); c.innerHTML='';
-  // add self
-  addPeerAvatar(auth.currentUser.uid, auth.currentUser.displayName||'Я', true);
+  addPeerAvatar(auth.currentUser.uid, $('#meName').value || auth.currentUser.displayName || 'Я', true);
 }
 function addPeerAvatar(uid, name, isMe=false){
   if(document.getElementById('peer_'+uid)) return;
@@ -393,7 +503,6 @@ function addPeerAvatar(uid, name, isMe=false){
   el.className='peer'; el.id='peer_'+uid;
   el.innerHTML=`<div class="vad" id="vad_${uid}"></div>${initials(name)}`;
   $('#peers').appendChild(el);
-  // popup mini-menu
   el.onclick = ()=> openPeerMenu(uid, name);
 }
 function removePeer(uid){
@@ -404,7 +513,7 @@ function removePeer(uid){
 
 /* ===== WebRTC per-pair over Firestore ===== */
 function pairId(a,b){ return [a,b].sort().join('_'); }
-function pcConfig(){ return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; } // STUN as requested
+function pcConfig(){ return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; } // STUN
 
 async function connectToPeer(peerUid){
   const id = pairId(auth.currentUser.uid, peerUid);
@@ -413,7 +522,7 @@ async function connectToPeer(peerUid){
   const pc = new RTCPeerConnection(pcConfig());
   pcs.set(peerUid, pc);
 
-  // local track
+  // local audio only
   myStream.getTracks().forEach(tr=> pc.addTrack(tr, myStream));
 
   // remote stream sink + VAD
@@ -423,6 +532,7 @@ async function connectToPeer(peerUid){
     if(!sink){
       const audio = document.createElement('audio'); audio.autoplay=true; audio.srcObject=stream;
       const container = $('#audio-sinks'); container.appendChild(audio);
+      if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
       const g = audioCtx.createGain(); g.gain.value = 1.0;
       const src = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser(); analyser.fftSize = 2048;
@@ -436,10 +546,9 @@ async function connectToPeer(peerUid){
       const loop = ()=>{
         if(!sinks.has(peerUid)) return;
         analyser.getByteTimeDomainData(buf);
-        // compute RMS
         let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
         const rms = Math.sqrt(sum/buf.length);
-        const talking = rms > 0.05; // threshold
+        const talking = rms > 0.05;
         vadEl.classList.toggle('on', talking);
         requestAnimationFrame(loop);
       };
@@ -480,8 +589,8 @@ async function connectToPeer(peerUid){
     try{ await pc.addIceCandidate(ch.doc.data()); }catch{}
   }));
 
-  // Create or update offer if I'm the newer member
-  const myIsCaller = auth.currentUser.uid < peerUid; // stable decision
+  // Create offer if I'm lexicographically "caller"
+  const myIsCaller = auth.currentUser.uid < peerUid;
   if(myIsCaller){
     const offer = await pc.createOffer({offerToReceiveAudio:true});
     await pc.setLocalDescription(offer);
@@ -489,7 +598,7 @@ async function connectToPeer(peerUid){
   }
 }
 
-/* ===== Mini peer menu ===== */
+/* ===== Mini peer menu (in-call) ===== */
 function openPeerMenu(uid, name){
   const m=$('#peer-menu');
   $('#pm-name').textContent = name || 'Пользователь';
@@ -500,7 +609,6 @@ function openPeerMenu(uid, name){
   $('#pm-close').onclick = ()=> m.classList.remove('show');
   m.classList.add('show');
 }
-
 </script>
 </body>
 </html>
