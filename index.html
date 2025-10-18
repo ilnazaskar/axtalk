@@ -33,6 +33,21 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 }
 .btn.primary{background:#27406f;color:#fff;border-color:#27406f}
 .btn:focus-visible{box-shadow:var(--ring)}
+.input{
+  all:unset;box-sizing:border-box;width:100%;
+  background:var(--bg-2);border:1px solid var(--outline);border-radius:12px;
+  padding:10px 12px;color:var(--text);caret-color:var(--text)
+}
+.input:focus-visible{box-shadow:var(--ring);border-color:#2c5bff}
+.input::placeholder{color:var(--text-dim);opacity:1}
+/* special case: friend note input by id */
+#fm-note{
+  all:unset;box-sizing:border-box;background:var(--bg-2);
+  border:1px solid var(--outline);border-radius:12px;
+  padding:10px 12px;color:var(--text);caret-color:var(--text)
+}
+#fm-note:focus-visible{box-shadow:var(--ring);border-color:#2c5bff}
+#fm-note::placeholder{color:var(--text-dim);opacity:1}
 .iconbtn{
   all:unset;cursor:pointer;border:1px solid var(--outline);border-radius:10px;
   background:var(--bg-2);width:36px;height:36px;display:grid;place-items:center
@@ -202,7 +217,7 @@ input[type="text"]{color:var(--text)}
         <div class="note">Введите 8-значный ID</div>
         <input id="af-id" inputmode="numeric" pattern="[0-9]*" maxlength="8"
                type="text" placeholder="Напр. 02831459"
-               style="all:unset;background:var(--bg-2);border:1px solid var(--outline);padding:10px 12px;border-radius:12px;width:100%"/>
+               class="input"/>
         <div class="actions">
           <button id="af-add" class="act accept">Добавить</button>
           <button id="af-cancel" class="act decline">Отмена</button>
@@ -215,7 +230,7 @@ input[type="text"]{color:var(--text)}
       <div class="sheet">
         <div style="font-weight:700">Изменить ник</div>
         <input id="en-input" type="text" placeholder="Ваш ник"
-               style="all:unset;background:var(--bg-2);border:1px solid var(--outline);padding:10px 12px;border-radius:12px;width:100%"/>
+               class="input"/>
         <div class="actions">
           <button id="en-save" class="act accept">Сохранить</button>
           <button id="en-cancel" class="act decline">Отмена</button>
