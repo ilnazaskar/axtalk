@@ -106,13 +106,7 @@ audio{display:none}
   .controls{gap:14px}
   .fab{width:60px;height:60px}
 }
-
-input[type="text"]{color:var(--text);background:var(--bg-2);border:1px solid var(--outline);padding:10px 12px;border-radius:12px;width:100%}
-
-input[type="text"]:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #2c5bff33;
-}
+input[type="text"]{color:var(--text)}
 </style>
 </head>
 <body>
@@ -290,7 +284,6 @@ const show = id => { $$('.screen').forEach(x=>x.classList.remove('active')); $(i
 function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase(); }
 function sec2hms(sec){ const h=Math.floor(sec/3600)|0; const m=Math.floor((sec%3600)/60)|0; const s=(sec%60)|0; return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 const onlyDigits = s => (s||'').replace(/\D/g,'');
-
 const GOOD = '1';
 
 /* ===== keep screen on refresh ===== */
@@ -331,21 +324,17 @@ async function ensureFriendCode(uid){
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
-$('#btn-google').onclick = async ()=>{ 
+$('#btn-google').onclick = async ()=>{
   try { await signInWithPopup(auth, provider); }
-  catch (e) { 
-    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') { 
-      try { await signInWithRedirect(auth, provider); } 
-      catch (er) { alert('Ошибка входа: '+er.code); } 
-    } 
-    else if (e.code === 'auth/unauthorized-domain') { 
-      alert('Добавь домен в Firebase → Auth → Settings → Authorized domains → ' + location.hostname); 
-    } 
-    else if (e.code === 'auth/operation-not-supported-in-this-environment') { 
-      alert('Открой сайт через http(s):// (не file://)'); 
-    } 
-    else { alert('Ошибка: '+e.code); } 
-  } 
+  catch (e) {
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+      try { await signInWithRedirect(auth, provider); } catch (er) { alert('Ошибка входа: '+er.code); }
+    } else if (e.code === 'auth/unauthorized-domain') {
+      alert('Добавь домен в Firebase → Auth → Settings → Authorized domains → ' + location.hostname);
+    } else if (e.code === 'auth/operation-not-supported-in-this-environment') {
+      alert('Открой сайт через http(s):// (не file://)');
+    } else { alert('Ошибка: '+e.code); }
+  }
 };
 $('#btn-signout').onclick = ()=>{ try{clearInterval(presTimer);}catch{}; localStorage.removeItem('ax_logged'); signOut(auth); };
 
@@ -364,18 +353,23 @@ onAuthStateChanged(auth, async (user)=>{
 });
 
 /* ===== edit my name ===== */
-$('#btn-edit-name').onclick = async ()=>{ 
-  const usnap = await getDoc(doc(db,'users',auth.currentUser.uid)); 
-  $('#en-input').value = (usnap.data()||{}).name || auth.currentUser.displayName || ''; 
-  $('#editname').classList.add('show'); 
+$('#btn-edit-name').onclick = async ()=>{
+  const usnap = await getDoc(doc(db,'users',auth.currentUser.uid));
+  $('#en-input').value = (usnap.data()||{}).name || auth.currentUser.displayName || '';
+  $('#editname').classList.add('show');
 };
 $('#en-cancel').onclick = ()=> $('#editname').classList.remove('show');
-$('#en-save').onclick = async ()=>{ 
-  const name = $('#en-input').value.trim() || 'Без имени'; 
-  await setDoc(doc(db,'users',auth.currentUser.uid), { name }, {merge:true}); 
-  $('#meBadge').textContent = name; 
-  $('#editname').classList.remove('show'); 
-  await loadFriends(); 
+$('#en-save').onclick = async ()=>{
+  const name = $('#en-input').value.trim() || 'Без имени';
+  await setDoc(doc(db,'users',auth.currentUser.uid), { name }, {merge:true});
+  $('#meBadge').textContent = name;
+  $('#editname').classList.remove('show');
+  await loadFriends();
+};
+
+/* copy code */
+$('#btn-copy-uid').onclick = async ()=>{
+  try{ await navigator.clipboard.writeText($('#meUid').textContent.trim()); $('#btn-copy-uid').textContent='✓'; setTimeout(()=>$('#btn-copy-uid').textContent='⧉',1000);}catch{}
 };
 
 /* ===== friends list ===== */
@@ -388,23 +382,109 @@ async function loadFriends(){
     const el=document.createElement('div');
     el.className='friend';
     const label = `${fr.name || 'Без имени'}${fr.note ? ' ~ ' + fr.note : ''}`;
-    el.innerHTML=`<div class="who">
-      <div class="ava"><span>${initials(fr.name||'')}</span><span class="dot ${fr.online?'on':''}"></span></div>
-      <div class="titleline">
-        <b title="${label}">${label}</b>
-        <div class="note">ID: ${fr.friendCode || fr.code || '—'}</div>
+    el.innerHTML=`
+      <div class="who">
+        <div class="ava"><span>${initials(fr.name||'')}</span><span class="dot ${fr.online?'on':''}"></span></div>
+        <div class="titleline">
+          <b title="${label}">${label}</b>
+          <div class="note">ID: ${fr.friendCode || fr.code || '—'}</div>
+        </div>
       </div>
-    </div>
-    <div class="row">
-      <button class="btn primary" data-call="${fr.uid}">Позвонить</button>
-      <button class="btn" data-edit="${fr.uid}">✎</button>
-    </div>`;
+      <div class="row">
+        <button class="btn primary" data-call="${fr.uid}">Позвонить</button>
+        <button class="btn" data-edit="${fr.uid}">✎</button>
+      </div>`;
     el.querySelector('[data-call]').onclick = ()=> placeCall(fr.uid, fr.name||'Без имени');
     el.querySelector('[data-edit]').onclick = ()=> openFriendMenu(fr.uid, fr.name||'Без имени', fr.note||'');
     list.appendChild(el);
   });
 }
 
+/* добавить друга (взаимно) */
+$('#btn-add-friend').onclick = ()=>{ $('#af-id').value=''; $('#addfriend').classList.add('show'); };
+$('#af-cancel').onclick = ()=> $('#addfriend').classList.remove('show');
+$('#af-add').onclick = async ()=>{
+  const code = onlyDigits($('#af-id').value).padStart(8,'0');
+  if(!/^\d{8}$/.test(code)) return;
+  const q = query(collection(db,'users'), where('friendCode','==', code), limit(1));
+  const res = await getDocs(q);
+  if(res.empty) return;
+  const target = res.docs[0].data();
+  const targetUid = target.uid;
+  if(targetUid === auth.currentUser.uid) return;
+
+  const mySnap = await getDoc(doc(db,'users',auth.currentUser.uid));
+  const me = mySnap.data()||{};
+
+  await setDoc(doc(db,'users',auth.currentUser.uid,'friends',targetUid), {
+    uid: targetUid, name: target.name || target.email || 'Без имени', note:'', online: !!target.online,
+    friendCode: target.friendCode || code
+  }, {merge:true});
+
+  await setDoc(doc(db,'users',targetUid,'friends',auth.currentUser.uid), {
+    uid: auth.currentUser.uid, name: me.name || me.email || 'Без имени', note:'', online:true,
+    friendCode: me.friendCode || $('#meUid').textContent.trim()
+  }, {merge:true});
+
+  $('#addfriend').classList.remove('show');
+  loadFriends();
+};
+
+/* friend menu */
+let fmCurrent=null;
+function openFriendMenu(uid, name, note){
+  fmCurrent = uid;
+  $('#fm-name').textContent = name;
+  $('#fm-note').value = note || '';
+  $('#friend-menu').classList.add('show');
+}
+$('#fm-close').onclick = ()=> { $('#friend-menu').classList.remove('show'); fmCurrent=null; };
+$('#fm-save').onclick = async ()=>{
+  if(!fmCurrent) return;
+  await updateDoc(doc(db,'users',auth.currentUser.uid,'friends',fmCurrent), { note: $('#fm-note').value.trim() });
+  $('#friend-menu').classList.remove('show'); fmCurrent=null; loadFriends();
+};
+$('#fm-delete').onclick = async ()=>{
+  if(!fmCurrent) return;
+  await deleteDoc(doc(db,'users',auth.currentUser.uid,'friends',fmCurrent));
+  try{ await deleteDoc(doc(db,'users',fmCurrent,'friends',auth.currentUser.uid)); }catch(e){}
+  $('#friend-menu').classList.remove('show'); fmCurrent=null; loadFriends();
+};
+
+/* ===== звонки ===== */
+let myStream=null, audioCtx=null, micTrack=null, micOn=true;
+let callId=null, callStartedAt=null, timerId=null;
+const pcs = new Map();            // peerUid -> RTCPeerConnection
+const senders = new Map();        // peerUid -> RTCRtpSender
+const sinks = new Map();          // uid -> {audioEl, gainNode, analyser}
+const members = new Set();        // участники
+const joinedAt = new Map();
+let unsubMembers=null;            // отписка от members
+let waitTargetUnsub=null;         // ожидание принятия
+let createdCallRef=null;          // ref calls/{id}
+let createdInviteRef=null;        // ref users/{target}/invites/{id}
+
+function startTimer(){ callStartedAt=Date.now(); clearInterval(timerId); timerId=setInterval(()=> $('#timer').textContent = sec2hms((Date.now()-callStartedAt)/1000), 1000); }
+function stopTimer(){ clearInterval(timerId); $('#timer').textContent='0:00:00'; }
+
+async function ensureMicTrack(){
+  if(!myStream || !micTrack || micTrack.readyState==='ended'){
+    myStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+    micTrack = myStream.getAudioTracks()[0];
+    micTrack.onended = ()=>{ /* на всяк. случай пересоздадим при следующем включении */ };
+  }
+}
+async function ensureMedia(){
+  await ensureMicTrack();
+  if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+  micOn = true; setMicUI();
+}
+function setMicUI(){
+  $('#btn-mic').classList.toggle('on', micOn);
+  $('#btn-mic').classList.toggle('off', !micOn);
+}
+
+/* Исходящий звонок: сначала "Звоним ..." с кнопкой Отменить. В комнату — только после принятия.*/
 async function placeCall(targetUid, targetName){
   // создаём комнату
   createdCallRef = await addDoc(collection(db,'calls'), {
@@ -448,6 +528,7 @@ async function placeCall(targetUid, targetName){
   };
 }
 
+/* входящий */
 function listenIncoming(){
   const invCol = collection(db,'users',auth.currentUser.uid,'invites');
   onSnapshot(invCol, (snap)=>{
@@ -473,15 +554,9 @@ function listenIncoming(){
         });
         enterCallUI(callId);
       };
-
       $('#inc-decline').onclick = async ()=>{
         $('#incoming').classList.remove('show');
         await setDoc(doc(db,'users',auth.currentUser.uid,'invites', id), {status:'declined'}, {merge:true});
-        // Закрытие окна звонка для А при отклонении Б
-        if (createdCallRef) {
-          $('#calling').classList.remove('show');
-          createdCallRef=null;
-        }
       };
     });
   });
@@ -517,6 +592,173 @@ async function enterCallUI(id){
   $('#btn-invite').onclick = openInviteModal;
   $('#btn-end').onclick = async ()=> { await leaveCallUI(true); };
   $('#btn-mic').onclick = toggleMic;
+}
+
+function renderPeersBar(initial=false){
+  const c=$('#peers'); if(initial) c.innerHTML='';
+  addPeerAvatar(auth.currentUser.uid, $('#meBadge').textContent || 'Я', true);
+}
+function addPeerAvatar(uid, name){
+  if(document.getElementById('peer_'+uid)) return;
+  const el=document.createElement('div');
+  el.className='peer'; el.id='peer_'+uid;
+  el.innerHTML=`<div class="vad" id="vad_${uid}"></div>${initials(name)}`;
+  $('#peers').appendChild(el);
+}
+function removePeer(uid){
+  pcs.get(uid)?.close(); pcs.delete(uid);
+  senders.delete(uid);
+  sinks.delete(uid);
+  const el = document.getElementById('peer_'+uid); if(el) el.remove();
+}
+
+/* Приглашение друзей в активный звонок */
+async function openInviteModal(){
+  const box = $('#invite-container'); box.innerHTML='';
+  const inCall = new Set(members);
+  const fs = await getDocs(collection(db,'users',auth.currentUser.uid,'friends'));
+  let any=false;
+  fs.forEach(s=>{
+    const fr=s.data();
+    if(inCall.has(fr.uid)) return;
+    any=true;
+    const row=document.createElement('div');
+    row.className='friend';
+    row.innerHTML = `
+      <div class="who">
+        <div class="ava"><span>${initials(fr.name||'')}</span></div>
+        <div class="titleline"><b>${fr.name||'Без имени'}</b><div class="note">${fr.friendCode||''}</div></div>
+      </div>
+      <div class="row"><button class="btn primary">Пригласить</button></div>`;
+    row.querySelector('.btn').onclick = async ()=>{
+      await addDoc(collection(db,'users',fr.uid,'invites'), {
+        type:'call', callId, from:auth.currentUser.uid, fromName:$('#meBadge').textContent||'Друг',
+        t:serverTimestamp(), status:'pending'
+      });
+    };
+    box.appendChild(row);
+  });
+  if(!any) box.innerHTML='<div class="note" style="text-align:center">Все друзья уже в комнате или список пуст</div>';
+  $('#invite-list').classList.add('show');
+}
+$('#invite-close').onclick = ()=> $('#invite-list').classList.remove('show');
+
+/* ——— WebRTC ——— */
+function pairId(a,b){ return [a,b].sort().join('_'); }
+function pcConfig(){ return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; }
+
+async function connectToPeer(peerUid){
+  const id = pairId(auth.currentUser.uid, peerUid);
+  const pairRef = doc(db,'calls',callId,'pairs',id);
+  const iAmA = auth.currentUser.uid < peerUid;
+
+  const pc = new RTCPeerConnection(pcConfig());
+  pcs.set(peerUid, pc);
+
+  await ensureMicTrack();
+  const sender = pc.addTrack(micTrack, myStream);
+  senders.set(peerUid, sender);
+
+  // remote audio + адаптивный VAD
+  pc.ontrack = (ev)=>{
+    const stream = ev.streams[0];
+    if(!sinks.get(peerUid)){
+      const audio = document.createElement('audio'); audio.autoplay=true; audio.srcObject=stream;
+      $('#audio-sinks').appendChild(audio);
+
+      if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+      const src = audioCtx.createMediaStreamSource(stream);
+      const g   = audioCtx.createGain(); g.gain.value = 1.0;
+      const an  = audioCtx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant=0.9;
+      src.connect(g).connect(audioCtx.destination); src.connect(an);
+      sinks.set(peerUid, {audioEl:audio, gain:g, analyser:an});
+
+      const vadEl = document.getElementById('vad_'+peerUid);
+      const buf = new Uint8Array(an.fftSize);
+      let levelAvg = 0.0, noise=0.008;
+      const loop = ()=>{
+        if(!sinks.has(peerUid)) return;
+        an.getByteTimeDomainData(buf);
+        let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
+        const rms = Math.sqrt(sum/buf.length);
+        levelAvg = levelAvg*0.85 + rms*0.15;
+        noise = Math.min(noise*0.995 + rms*0.005, 0.06);
+        const th = Math.max(noise*2.8, 0.012);
+        vadEl.classList.toggle('on', levelAvg > th);
+        requestAnimationFrame(loop);
+      };
+      loop();
+    }
+  };
+
+  // ICE
+  pc.onicecandidate = async (e)=>{
+    if(!e.candidate) return;
+    const sub = collection(db,'calls',callId,'pairs',id, iAmA ? 'ice_a' : 'ice_b');
+    await addDoc(sub, JSON.parse(JSON.stringify(e.candidate)));
+  };
+
+  // SDP (храним только {type,sdp})
+  onSnapshot(pairRef, async (snap)=>{
+    const data = snap.data(); if(!data) return;
+
+    if(!pc.currentRemoteDescription && data.offer && data.offerBy !== auth.currentUser.uid){
+      await pc.setRemoteDescription(data.offer);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await updateDoc(pairRef,{ answerBy:auth.currentUser.uid, answer: {type:answer.type, sdp:answer.sdp} });
+    }
+
+    if(!pc.currentRemoteDescription &&
+       data.answer &&
+       data.answerBy !== auth.currentUser.uid &&
+       pc.signalingState==='have-local-offer'){
+      await pc.setRemoteDescription(data.answer);
+    }
+  });
+
+  // ICE listeners
+  const iceA = collection(db,'calls',callId,'pairs',id,'ice_a');
+  const iceB = collection(db,'calls',callId,'pairs',id,'ice_b');
+  onSnapshot(iAmA?iceB:iceA, (snap)=> snap.docChanges().forEach(async ch=>{
+    if(ch.type!=='added') return;
+    try{ await pc.addIceCandidate(ch.doc.data()); }catch{}
+  }));
+
+  // создаём offer только одной стороной
+  if(iAmA){
+    const offer = await pc.createOffer({ offerToReceiveAudio:true });
+    await pc.setLocalDescription(offer);
+    await setDoc(pairRef, { a:auth.currentUser.uid, b:peerUid, offerBy:auth.currentUser.uid, offer: {type:offer.type, sdp:offer.sdp} }, {merge:true});
+  }
+}
+
+/* mute/unmute устойчиво — replaceTrack(null / micTrack) */
+async function toggleMic(){
+  if(micOn){
+    micOn = false; setMicUI();
+    for(const s of senders.values()){ try{ await s.replaceTrack(null);}catch{} }
+  }else{
+    await ensureMicTrack();
+    micOn = true; setMicUI();
+    for(const s of senders.values()){ try{ await s.replaceTrack(micTrack);}catch{} }
+  }
+}
+
+/* выход из звонка */
+async function leaveCallUI(removeMyMember=false){
+  try{
+    if(removeMyMember && callId){
+      await deleteDoc(doc(db,'calls',callId,'members',auth.currentUser.uid));
+    }
+  }catch{}
+  try{ if(unsubMembers) unsubMembers(); }catch{}
+  members.clear();
+  pcs.forEach(pc=>pc.close()); pcs.clear();
+  senders.clear(); sinks.clear();
+  stopTimer();
+  show('#screen-friends');
+  callId=null;
 }
 </script>
 </body>
