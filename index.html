@@ -61,17 +61,16 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .friend .titleline b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
 
 /* modals */
-.modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;padding:18px}
+.modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;padding:18px;z-index:20}
 .modal.show{display:grid}
 .sheet{width:100%;max-width:420px;background:var(--bg-2);border:1px solid var(--outline);border-radius:18px;padding:18px;display:grid;gap:12px}
 .actions{display:flex;gap:12px;justify-content:center}
-.act{all:unset;cursor:pointer;width:64px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff}
+.act{all:unset;cursor:pointer;min-width:120px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff}
 .act.accept{background:var(--green)} .act.decline{background:var(--red)}
 
-/* call screen (как на макете) */
+/* call screen — как на макете */
 .call{min-height:100svh;display:grid;grid-template-rows:auto 1fr auto}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--outline)}
-.badge{border:1px dashed var(--outline);border-radius:12px;padding:6px 10px;color:var(--text-dim)}
+.topbar{display:flex;align-items:center;justify-content:flex-end;padding:10px 14px;border-bottom:1px solid var(--outline)}
 .invite-btn{all:unset;border:1px solid var(--outline);border-radius:12px;padding:8px 12px;cursor:pointer}
 
 .peers{display:flex;gap:12px;align-items:center;overflow:auto;padding:10px 14px;border-bottom:1px solid var(--outline);-webkit-overflow-scrolling:touch}
@@ -84,7 +83,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .peer .vad.on{border-color:#1bd35f}
 
 .center{display:grid;place-items:center;padding:18px}
-.timer{font-size: clamp(36px, 9vw, 56px);font-weight:800;letter-spacing:.5px}
+.timer{font-size: clamp(36px, 9vw, 56px);font-weight:800;letter-spacing:.5px;text-align:center}
 
 .controls{display:flex;gap:22px;justify-content:center;align-items:center;padding:16px;border-top:1px solid var(--outline)}
 .fab{all:unset;width:68px;height:68px;border-radius:50%;display:grid;place-items:center;color:#fff;cursor:pointer;box-shadow:0 8px 22px #0006;border:1px solid #0000}
@@ -119,7 +118,7 @@ input[type="text"]{color:var(--text)}
       <div class="hero">
         <div class="title">AxTalk</div>
         <button id="btn-google" class="btn primary google">
-          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.245,32.091,29.065,35,24,35c-6.075,0-11-4.925-11-11 s4.925-11,11-11c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,16.108,18.961,13,24,13c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657 C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c4.942,0,9.448-1.897,12.837-4.993l-5.926-5.018C29.006,35.091,26.668,36,24,36 c-5.041,0-9.21-2.899-11.281-7.074l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-1.018,2.908-3.168,5.266-5.89,6.724 c0.001-0.001,0.002-0.001,0.003-0.002l5.926,5.018C34.971,40.149,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.245,32.091,29.065,35,24,35c-6.075,0-11-4.925-11-11 s4.925-11,11-11c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,16.108,18.961,13,24,13c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657 C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c4.942,0,9.448-1.897,12.837-4.993l-5.926-5.018C29.006,35.091,26.668,36,24,36 c-5.041,0-9.21-2.899-11.281-7.074l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42В20H24v8h11.303c-1.018,2.908-3.168,5.266-5.89,6.724 c0.001-0.001,0.002-0.001,0.003-0.002l5.926,5.018C34.971,40.149,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
           Войти через Google
         </button>
       </div>
@@ -156,7 +155,6 @@ input[type="text"]{color:var(--text)}
     <section class="screen" id="screen-call">
       <div class="call">
         <div class="topbar">
-          <div id="callTitle" class="badge">Звонок</div>
           <button id="btn-invite" class="invite-btn">Пригласить друга</button>
         </div>
 
@@ -183,6 +181,16 @@ input[type="text"]{color:var(--text)}
         <div class="actions">
           <button id="inc-accept" class="act accept" title="Принять">Принять</button>
           <button id="inc-decline" class="act decline" title="Отклонить">Отклонить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTGOING (dialing) -->
+    <div id="calling" class="modal">
+      <div class="sheet">
+        <div id="calling-title" style="font-weight:700;text-align:center">Звоним…</div>
+        <div class="actions">
+          <button id="calling-cancel" class="act decline">Отменить</button>
         </div>
       </div>
     </div>
@@ -276,10 +284,9 @@ const show = id => { $$('.screen').forEach(x=>x.classList.remove('active')); $(i
 function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase(); }
 function sec2hms(sec){ const h=Math.floor(sec/3600)|0; const m=Math.floor((sec%3600)/60)|0; const s=(sec%60)|0; return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 const onlyDigits = s => (s||'').replace(/\D/g,'');
-const wait = ms => new Promise(r=>setTimeout(r,ms));
-
-/* ===== keep screen on refresh (без мигания) ===== */
 const GOOD = '1';
+
+/* ===== keep screen on refresh ===== */
 (function preloadScreen(){
   if(localStorage.getItem('ax_logged')===GOOD) show('#screen-friends');
   else show('#screen-auth');
@@ -294,7 +301,7 @@ async function setPresence(user){
   presTimer=setInterval(()=> updateDoc(uref,{ lastActive:serverTimestamp(), online:true }).catch(()=>{}), 20000);
 }
 
-/* ===== 8-значный friendCode (уникальный) ===== */
+/* ===== 8-значный friendCode ===== */
 async function ensureFriendCode(uid){
   const uref = doc(db,'users',uid);
   const snap = await getDoc(uref);
@@ -336,8 +343,7 @@ onAuthStateChanged(auth, async (user)=>{
   localStorage.setItem('ax_logged', GOOD);
   await setPresence(user);
   const code = await ensureFriendCode(user.uid);
-  const uref  = doc(db,'users',user.uid);
-  const usnap = await getDoc(uref);
+  const usnap = await getDoc(doc(db,'users',user.uid));
   const name  = (usnap.data()||{}).name || user.displayName || 'Без имени';
   $('#meBadge').textContent = name;
   $('#meUid').textContent = code;
@@ -388,13 +394,13 @@ async function loadFriends(){
         <button class="btn primary" data-call="${fr.uid}">Позвонить</button>
         <button class="btn" data-edit="${fr.uid}">✎</button>
       </div>`;
-    el.querySelector('[data-call]').onclick = ()=> placeCall(fr.uid);      // <— ЗВОНИМ, но в комнату зайдём только после ответа
+    el.querySelector('[data-call]').onclick = ()=> placeCall(fr.uid, fr.name||'Без имени');
     el.querySelector('[data-edit]').onclick = ()=> openFriendMenu(fr.uid, fr.name||'Без имени', fr.note||'');
     list.appendChild(el);
   });
 }
 
-/* добавить друга (взаимно, без подтверждений) */
+/* добавить друга (взаимно) */
 $('#btn-add-friend').onclick = ()=>{ $('#af-id').value=''; $('#addfriend').classList.add('show'); };
 $('#af-cancel').onclick = ()=> $('#addfriend').classList.remove('show');
 $('#af-add').onclick = async ()=>{
@@ -410,13 +416,11 @@ $('#af-add').onclick = async ()=>{
   const mySnap = await getDoc(doc(db,'users',auth.currentUser.uid));
   const me = mySnap.data()||{};
 
-  // у себя
   await setDoc(doc(db,'users',auth.currentUser.uid,'friends',targetUid), {
     uid: targetUid, name: target.name || target.email || 'Без имени', note:'', online: !!target.online,
     friendCode: target.friendCode || code
   }, {merge:true});
 
-  // у друга (правила должны разрешать create, если id документа == auth.uid)
   await setDoc(doc(db,'users',targetUid,'friends',auth.currentUser.uid), {
     uid: auth.currentUser.uid, name: me.name || me.email || 'Без имени', note:'', online:true,
     friendCode: me.friendCode || $('#meUid').textContent.trim()
@@ -451,12 +455,14 @@ $('#fm-delete').onclick = async ()=>{
 let myStream=null, audioCtx=null, micTrack=null, micOn=true;
 let callId=null, callStartedAt=null, timerId=null;
 const pcs = new Map();            // peerUid -> RTCPeerConnection
-const senders = new Map();        // peerUid -> RTCRtpSender (для надёжного mute/unmute)
+const senders = new Map();        // peerUid -> RTCRtpSender
 const sinks = new Map();          // uid -> {audioEl, gainNode, analyser}
-const members = new Set();        // текущие участники комнаты
-const joinedAt = new Map();       // uid -> ts
+const members = new Set();        // участники
+const joinedAt = new Map();
 let unsubMembers=null;            // отписка от members
-let currentCallCreator=null;
+let waitTargetUnsub=null;         // ожидание принятия
+let createdCallRef=null;          // ref calls/{id}
+let createdInviteRef=null;        // ref users/{target}/invites/{id}
 
 function startTimer(){ callStartedAt=Date.now(); clearInterval(timerId); timerId=setInterval(()=> $('#timer').textContent = sec2hms((Date.now()-callStartedAt)/1000), 1000); }
 function stopTimer(){ clearInterval(timerId); $('#timer').textContent='0:00:00'; }
@@ -465,27 +471,39 @@ async function ensureMicTrack(){
   if(!myStream || !micTrack || micTrack.readyState==='ended'){
     myStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
     micTrack = myStream.getAudioTracks()[0];
+    micTrack.onended = ()=>{ /* на всяк. случай пересоздадим при следующем включении */ };
   }
 }
 async function ensureMedia(){
   await ensureMicTrack();
   if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+  micOn = true; setMicUI();
+}
+function setMicUI(){
+  $('#btn-mic').classList.toggle('on', micOn);
+  $('#btn-mic').classList.toggle('off', !micOn);
 }
 
-/* ——— Исходящий звонок: в комнату заходим только когда друг ПРИНЯЛ ——— */
-async function placeCall(targetUid){
-  const ref = await addDoc(collection(db,'calls'), {
-    createdBy: auth.currentUser.uid,
-    startedAt: serverTimestamp(),
-    active:true
+/* Исходящий звонок: сначала "Звоним ..." с кнопкой Отменить. В комнату — только после принятия.*/
+async function placeCall(targetUid, targetName){
+  // создаём комнату
+  createdCallRef = await addDoc(collection(db,'calls'), {
+    createdBy: auth.currentUser.uid, startedAt: serverTimestamp(), active:true,
+    invited: [targetUid]   // чтобы аннулировать у друга при отмене (можно в правилах разрешить read invited)
   });
-  currentCallCreator = auth.currentUser.uid;
-  // слушаем, когда друг добавит себя в members
-  const targetRef = doc(db,'calls',ref.id,'members',targetUid);
-  const unsub = onSnapshot(targetRef, async (s)=>{
+
+  // показываем модалку "Звоним ..."
+  $('#calling-title').textContent = `Звоним: ${targetName||'друг'}`;
+  $('#calling').classList.add('show');
+
+  // ждём, когда друг добавит себя в members
+  const targetMemberRef = doc(db,'calls',createdCallRef.id,'members',targetUid);
+  waitTargetUnsub = onSnapshot(targetMemberRef, async (s)=>{
     if(s.exists()){
-      callId = ref.id;
-      unsub();
+      // принял — входим
+      $('#calling').classList.remove('show');
+      callId = createdCallRef.id;
+      waitTargetUnsub?.(); waitTargetUnsub=null;
       await ensureMedia();
       await setDoc(doc(db,'calls',callId,'members',auth.currentUser.uid), {
         uid: auth.currentUser.uid, name: $('#meBadge').textContent || 'Me', joinedAt: serverTimestamp()
@@ -493,10 +511,21 @@ async function placeCall(targetUid){
       enterCallUI(callId);
     }
   });
-  // отправляем инвайт
-  await addDoc(collection(db,'users',targetUid,'invites'), {
-    type:'call', callId: ref.id, from: auth.currentUser.uid, t: serverTimestamp(), status:'pending'
+
+  // отправляем инвайт (с именем)
+  createdInviteRef = await addDoc(collection(db,'users',targetUid,'invites'), {
+    type:'call', callId: createdCallRef.id, from: auth.currentUser.uid,
+    fromName: $('#meBadge').textContent || 'Друг', t: serverTimestamp(), status:'pending'
   });
+
+  // обработчик отмены
+  $('#calling-cancel').onclick = async ()=>{
+    try{ if(createdInviteRef) await updateDoc(createdInviteRef, { status:'canceled' }); }catch(e){}
+    try{ if(createdCallRef) await deleteDoc(createdCallRef); }catch(e){}
+    waitTargetUnsub?.(); waitTargetUnsub=null;
+    $('#calling').classList.remove('show');
+    createdCallRef=null; createdInviteRef=null;
+  };
 }
 
 /* входящий */
@@ -504,14 +533,21 @@ function listenIncoming(){
   const invCol = collection(db,'users',auth.currentUser.uid,'invites');
   onSnapshot(invCol, (snap)=>{
     snap.docChanges().forEach(ch => {
+      const id = ch.doc.id;
       const inv = ch.doc.data();
+      // скрыть, если отменили/удалили
+      if((ch.type==='modified' && inv.status==='canceled') || ch.type==='removed'){
+        $('#incoming').classList.remove('show'); return;
+      }
       if(ch.type!=='added' || inv.status!=='pending' || !inv.callId) return;
-      $('#inc-from').textContent = 'От: ' + (inv.from || 'друг');
+
+      $('#inc-from').textContent = 'От: ' + (inv.fromName || 'друг');
       $('#incoming').classList.add('show');
+
       $('#inc-accept').onclick = async ()=>{
         $('#incoming').classList.remove('show');
         callId = inv.callId;
-        await setDoc(doc(db,'users',auth.currentUser.uid,'invites', ch.doc.id), {status:'accepted'}, {merge:true});
+        await setDoc(doc(db,'users',auth.currentUser.uid,'invites', id), {status:'accepted'}, {merge:true});
         await ensureMedia();
         await setDoc(doc(db,'calls',callId,'members',auth.currentUser.uid), {
           uid: auth.currentUser.uid, name: $('#meBadge').textContent || 'Me', joinedAt: serverTimestamp()
@@ -520,7 +556,7 @@ function listenIncoming(){
       };
       $('#inc-decline').onclick = async ()=>{
         $('#incoming').classList.remove('show');
-        await setDoc(doc(db,'users',auth.currentUser.uid,'invites', ch.doc.id), {status:'declined'}, {merge:true});
+        await setDoc(doc(db,'users',auth.currentUser.uid,'invites', id), {status:'declined'}, {merge:true});
       };
     });
   });
@@ -529,20 +565,16 @@ function listenIncoming(){
 /* вход в UI звонка */
 async function enterCallUI(id){
   show('#screen-call');
-  $('#callTitle').textContent = `Комната #${id.slice(0,6)}`;
+  setMicUI();
   startTimer();
   renderPeersBar(true);
 
-  // список участников
   if(unsubMembers) try{unsubMembers();}catch{}
   unsubMembers = onSnapshot(collection(db,'calls',id,'members'), (snap)=>{
-    const prev = new Set(members);
     members.clear();
     snap.forEach(d=>members.add(d.id));
-
-    // добавленные/удалённые
     snap.docChanges().forEach(ch=>{
-      const d = ch.doc.data();
+      const d=ch.doc.data();
       if(ch.type==='added'){
         joinedAt.set(d.uid, Date.now());
         addPeerAvatar(d.uid, d.name);
@@ -553,8 +585,7 @@ async function enterCallUI(id){
 
     // если в комнате остался один — выходим у всех
     if(members.size<=1){
-      // малюсенькая задержка, чтобы не закрыться в момент входа второго
-      setTimeout(()=>{ if(members.size<=1) leaveCallUI(); }, 400);
+      setTimeout(()=>{ if(members.size<=1) leaveCallUI(false); }, 300);
     }
   });
 
@@ -581,7 +612,7 @@ function removePeer(uid){
   const el = document.getElementById('peer_'+uid); if(el) el.remove();
 }
 
-/* Приглашение друзей в активный звонок (без ввода кода) */
+/* Приглашение друзей в активный звонок */
 async function openInviteModal(){
   const box = $('#invite-container'); box.innerHTML='';
   const inCall = new Set(members);
@@ -600,7 +631,10 @@ async function openInviteModal(){
       </div>
       <div class="row"><button class="btn primary">Пригласить</button></div>`;
     row.querySelector('.btn').onclick = async ()=>{
-      await addDoc(collection(db,'users',fr.uid,'invites'), { type:'call', callId, from:auth.currentUser.uid, t:serverTimestamp(), status:'pending' });
+      await addDoc(collection(db,'users',fr.uid,'invites'), {
+        type:'call', callId, from:auth.currentUser.uid, fromName:$('#meBadge').textContent||'Друг',
+        t:serverTimestamp(), status:'pending'
+      });
     };
     box.appendChild(row);
   });
@@ -611,7 +645,7 @@ $('#invite-close').onclick = ()=> $('#invite-list').classList.remove('show');
 
 /* ——— WebRTC ——— */
 function pairId(a,b){ return [a,b].sort().join('_'); }
-function pcConfig(){ return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; } // STUN
+function pcConfig(){ return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; }
 
 async function connectToPeer(peerUid){
   const id = pairId(auth.currentUser.uid, peerUid);
@@ -625,23 +659,20 @@ async function connectToPeer(peerUid){
   const sender = pc.addTrack(micTrack, myStream);
   senders.set(peerUid, sender);
 
-  /* remote audio + устойчивый VAD (адаптивный порог) */
+  // remote audio + адаптивный VAD
   pc.ontrack = (ev)=>{
     const stream = ev.streams[0];
     if(!sinks.get(peerUid)){
-      const audio = document.createElement('audio');
-      audio.autoplay = true; audio.srcObject = stream;
+      const audio = document.createElement('audio'); audio.autoplay=true; audio.srcObject=stream;
       $('#audio-sinks').appendChild(audio);
 
       if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
       const src = audioCtx.createMediaStreamSource(stream);
       const g   = audioCtx.createGain(); g.gain.value = 1.0;
-      const an  = audioCtx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = 0.9;
-      src.connect(g).connect(audioCtx.destination);
-      src.connect(an);
+      const an  = audioCtx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant=0.9;
+      src.connect(g).connect(audioCtx.destination); src.connect(an);
       sinks.set(peerUid, {audioEl:audio, gain:g, analyser:an});
 
-      // VAD — адаптивный порог (работает и при тихой речи)
       const vadEl = document.getElementById('vad_'+peerUid);
       const buf = new Uint8Array(an.fftSize);
       let levelAvg = 0.0, noise=0.008;
@@ -651,8 +682,8 @@ async function connectToPeer(peerUid){
         let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
         const rms = Math.sqrt(sum/buf.length);
         levelAvg = levelAvg*0.85 + rms*0.15;
-        noise = Math.min(noise*0.995 + rms*0.005, 0.06); // медленно ползёт за шумом
-        const th = Math.max(noise*2.8, 0.012);           // адаптивный порог
+        noise = Math.min(noise*0.995 + rms*0.005, 0.06);
+        const th = Math.max(noise*2.8, 0.012);
         vadEl.classList.toggle('on', levelAvg > th);
         requestAnimationFrame(loop);
       };
@@ -660,14 +691,14 @@ async function connectToPeer(peerUid){
     }
   };
 
-  // ICE (в свою сторону)
+  // ICE
   pc.onicecandidate = async (e)=>{
     if(!e.candidate) return;
     const sub = collection(db,'calls',callId,'pairs',id, iAmA ? 'ice_a' : 'ice_b');
     await addDoc(sub, JSON.parse(JSON.stringify(e.candidate)));
   };
 
-  // SDP сигналинг — храним только {type,sdp}
+  // SDP (храним только {type,sdp})
   onSnapshot(pairRef, async (snap)=>{
     const data = snap.data(); if(!data) return;
 
@@ -675,8 +706,7 @@ async function connectToPeer(peerUid){
       await pc.setRemoteDescription(data.offer);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      const ansInit = { type: answer.type, sdp: answer.sdp };
-      await updateDoc(pairRef,{ answerBy:auth.currentUser.uid, answer: ansInit });
+      await updateDoc(pairRef,{ answerBy:auth.currentUser.uid, answer: {type:answer.type, sdp:answer.sdp} });
     }
 
     if(!pc.currentRemoteDescription &&
@@ -699,26 +729,23 @@ async function connectToPeer(peerUid){
   if(iAmA){
     const offer = await pc.createOffer({ offerToReceiveAudio:true });
     await pc.setLocalDescription(offer);
-    const offerInit = { type: offer.type, sdp: offer.sdp };
-    await setDoc(pairRef, { a:auth.currentUser.uid, b:peerUid, offerBy:auth.currentUser.uid, offer: offerInit }, {merge:true});
+    await setDoc(pairRef, { a:auth.currentUser.uid, b:peerUid, offerBy:auth.currentUser.uid, offer: {type:offer.type, sdp:offer.sdp} }, {merge:true});
   }
 }
 
-/* mute/unmute надёжно — через replaceTrack */
+/* mute/unmute устойчиво — replaceTrack(null / micTrack) */
 async function toggleMic(){
   if(micOn){
-    micOn = false;
+    micOn = false; setMicUI();
     for(const s of senders.values()){ try{ await s.replaceTrack(null);}catch{} }
-    $('#btn-mic').classList.remove('on'); $('#btn-mic').classList.add('off');
   }else{
     await ensureMicTrack();
-    micOn = true;
+    micOn = true; setMicUI();
     for(const s of senders.values()){ try{ await s.replaceTrack(micTrack);}catch{} }
-    $('#btn-mic').classList.add('on'); $('#btn-mic').classList.remove('off');
   }
 }
 
-/* выход из звонка (и закрыть у второго) */
+/* выход из звонка */
 async function leaveCallUI(removeMyMember=false){
   try{
     if(removeMyMember && callId){
