@@ -251,6 +251,15 @@ input[type="text"]{color:var(--text)}
         <button id="fm-delete" class="btn" style="border-color:#822;color:#fff;background:#2a1111">Удалить из друзей</button>
       </div>
     </div>
+    <!-- PEER MENU (in-call) -->
+    <div id="peer-menu" class="smallmenu">
+      <div class="row" style="justify-content:space-between"><b id="pm-name"></b><button id="pm-close" class="btn">×</button></div>
+      <div class="hr"></div>
+      <div class="row" style="justify-content:space-between">
+        <span class="note">Громкость</span>
+        <input id="pm-volume" class="range" type="range" min="0" max="200" value="100"/>
+      </div>
+    </div>
 
     <!-- INVITE FRIENDS (внутри звонка) -->
     <div id="invite-list" class="modal">
@@ -465,6 +474,21 @@ $('#fm-delete').onclick = async ()=>{
   try{ await deleteDoc(doc(db,'users',fmCurrent,'friends',auth.currentUser.uid)); }catch(e){}
   $('#friend-menu').classList.remove('show'); fmCurrent=null; loadFriends();
 };
+/* peer menu (in-call) */
+let pmCurrent=null;
+function openPeerMenu(uid){
+  pmCurrent = uid;
+  $('#pm-name').textContent = (peerNames.get(uid) || 'Собеседник');
+  const s = sinks.get(uid);
+  const v = s && s.gain ? Math.round(Math.max(0, Math.min(2, s.gain.gain.value))*100) : 100;
+  const el = $('#pm-volume'); if(el) el.value = String(v);
+  $('#peer-menu').classList.add('show');
+}
+$('#pm-close').onclick = ()=>{ $('#peer-menu').classList.remove('show'); pmCurrent=null; };
+$('#pm-volume').oninput = (e)=>{
+  const val = Math.max(0, Math.min(200, parseInt((e?.target?.value)||'100',10)))/100;
+  if(pmCurrent && sinks.get(pmCurrent)?.gain) sinks.get(pmCurrent).gain.gain.value = val;
+};
 
 /* ===== звонки ===== */
 let myStream=null, audioCtx=null, micTrack=null, micOn=true;
@@ -478,6 +502,10 @@ let unsubMembers=null;            // отписка от members
 let waitTargetUnsub=null;         // ожидание принятия
 let createdCallRef=null;          // ref calls/{id}
 let createdInviteRef=null;        // ref users/{target}/invites/{id}
+
+// additional state
+let waitInviteUnsub=null;         // unsubscribe for target invite status
+const peerNames = new Map();      // uid -> display name
 
 function startTimer(){ callStartedAt=Date.now(); clearInterval(timerId); timerId=setInterval(()=> $('#timer').textContent = sec2hms((Date.now()-callStartedAt)/1000), 1000); }
 function stopTimer(){ clearInterval(timerId); $('#timer').textContent='0:00:00'; }
@@ -538,9 +566,24 @@ async function placeCall(targetUid, targetName){
     try{ if(createdInviteRef) await updateDoc(createdInviteRef, { status:'canceled' }); }catch(e){}
     try{ if(createdCallRef) await deleteDoc(createdCallRef); }catch(e){}
     waitTargetUnsub?.(); waitTargetUnsub=null;
+    waitInviteUnsub?.(); waitInviteUnsub=null;
     $('#calling').classList.remove('show');
     createdCallRef=null; createdInviteRef=null;
   };
+
+    // Auto-close dialing if callee declines or invite is removed
+  try{
+    waitInviteUnsub = onSnapshot(createdInviteRef, (snap)=>{
+      const inv = snap.exists() ? snap.data() : null;
+      if(!snap.exists() || (inv && inv.status === 'declined')){
+        $('#calling').classList.remove('show');
+        try{ if(createdCallRef) deleteDoc(createdCallRef); }catch(e){}
+        waitTargetUnsub?.(); waitTargetUnsub=null;
+        waitInviteUnsub?.(); waitInviteUnsub=null;
+        createdCallRef=null; createdInviteRef=null;
+      }
+    });
+  }catch(e){}
 }
 
 /* входящий */
@@ -592,8 +635,11 @@ async function enterCallUI(id){
       const d=ch.doc.data();
       if(ch.type==='added'){
         joinedAt.set(d.uid, Date.now());
-        addPeerAvatar(d.uid, d.name);
-        if(d.uid!==auth.currentUser.uid) connectToPeer(d.uid);
+        peerNames.set(d.uid, d.name || '');
+        if(d.uid!==auth.currentUser.uid){
+          addPeerAvatar(d.uid, d.name);
+          connectToPeer(d.uid);
+        }
       }
       if(ch.type==='removed'){ removePeer(ch.doc.id); }
     });
@@ -611,11 +657,11 @@ async function enterCallUI(id){
 
 function renderPeersBar(initial=false){
   const c=$('#peers'); if(initial) c.innerHTML='';
-  addPeerAvatar(auth.currentUser.uid, $('#meBadge').textContent || 'Я', true);
 }
 function addPeerAvatar(uid, name){
   if(document.getElementById('peer_'+uid)) return;
   const el=document.createElement('div');
+  el.onclick = ()=> openPeerMenu(uid);
   el.className='peer'; el.id='peer_'+uid;
   el.innerHTML=`<div class="vad" id="vad_${uid}"></div>${initials(name)}`;
   $('#peers').appendChild(el);
