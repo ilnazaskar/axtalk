@@ -18,7 +18,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sанс-serif}
 .app{min-height:100svh;display:grid}
 .shell{max-width:520px;margin:auto;min-height:100svh;height:100%;display:grid;background:var(--bg);}
 .screen{display:none} .screen.active{display:block}
@@ -133,7 +133,7 @@ input[type="text"]{color:var(--text)}
       <div class="hero">
         <div class="title">AxTalk</div>
         <button id="btn-google" class="btn primary google">
-          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.245,32.091,29.065,35,24,35c-6.075,0-11-4.925-11-11 s4.925-11,11-11c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,16.108,18.961,13,24,13c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657 C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c4.942,0,9.448-1.897,12.837-4.993l-5.926-5.018C29.006,35.091,26.668,36,24,36 c-5.041,0-9.21-2.899-11.281-7.074l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42В20H24v8h11.303c-1.018,2.908-3.168,5.266-5.89,6.724 c0.001-0.001,0.002-0.001,0.003-0.002l5.926,5.018C34.971,40.149,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.245,32.091,29.065,35,24,35c-6.075,0-11-4.925-11-11 s4.925-11,11-11c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,16.108,18.961,13,24,13c2.803,0,5.367,1.059,7.314,2.786l5.657-5.657 C33.555,6.053,28.973,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c4.942,0,9.448-1.897,12.837-4.993l-5.926-5.018C29.006,35.091,26.668,36,24,36 c-5.041,0-9.21-2.899-11.281-7.074l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42В20H24v8h11.303c-1.018,2.908-3.168,5.266-5.89,6.724 c0.001-0.001,0.002-0.001,0.003-0.002l-5.926,5.018C34.971,40.149,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
           Войти через Google
         </button>
       </div>
@@ -284,7 +284,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js';
 import {
   getFirestore, doc, setDoc, getDoc, addDoc, getDocs, updateDoc, deleteDoc,
-  collection, serverTimestamp, onSnapshot, query, where, limit
+  collection, serverTimestamp, onSnapshot, query, where, limit, deleteField /* << добавлено deleteField */
 } from 'https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -706,7 +706,65 @@ $('#invite-close').onclick = ()=> $('#invite-list').classList.remove('show');
 
 /* ——— WebRTC ——— */
 function pairId(a,b){ return [a,b].sort().join('_'); }
-function pcConfig(){ return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; }
+/* ИЗМЕНЕНО: укреплённая конфигурация P2P без TURN */
+function pcConfig(){
+  return {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' }
+    ],
+    iceCandidatePoolSize: 2,
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require'
+  };
+}
+
+/* ДОБАВЛЕНО: helpers для ICE-рестарта и вотчдогов */
+async function restartPairOffer(pc, pairRef, iAmA){
+  try { pc.restartIce?.(); } catch {}
+  if (!iAmA) return;
+  try {
+    const offer = await pc.createOffer({ iceRestart: true, offerToReceiveAudio: true });
+    await pc.setLocalDescription(offer);
+    await updateDoc(pairRef, {
+      offerBy: auth.currentUser.uid,
+      offer: { type: offer.type, sdp: offer.sdp },
+      answer: deleteField(),
+      answerBy: deleteField()
+    });
+  } catch (e) {}
+}
+function setupIceWatchers(peerUid, pc, pairRef, iAmA){
+  let restarting = false;
+  let disconnectTimer = null;
+  let firstConnectTimer = setTimeout(() => {
+    if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'completed') {
+      if (!restarting) { restarting = true; restartPairOffer(pc, pairRef, iAmA).finally(()=>restarting=false); }
+    }
+  }, 12000);
+
+  pc.oniceconnectionstatechange = () => {
+    const s = pc.iceConnectionState;
+    if (s === 'connected' || s === 'completed') {
+      clearTimeout(disconnectTimer);
+      clearTimeout(firstConnectTimer);
+    }
+    if (s === 'disconnected') {
+      clearTimeout(disconnectTimer);
+      disconnectTimer = setTimeout(() => {
+        if (!restarting) { restarting = true; restartPairOffer(pc, pairRef, iAmA).finally(()=>restarting=false); }
+      }, 4000);
+    }
+    if (s === 'failed') {
+      if (!restarting) { restarting = true; restartPairOffer(pc, pairRef, iAmA).finally(()=>restarting=false); }
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed') {
+      if (!restarting) { restarting = true; restartPairOffer(pc, pairRef, iAmA).finally(()=>restarting=false); }
+    }
+  };
+}
 
 async function connectToPeer(peerUid){
   const id = pairId(auth.currentUser.uid, peerUid);
@@ -716,8 +774,20 @@ async function connectToPeer(peerUid){
   const pc = new RTCPeerConnection(pcConfig());
   pcs.set(peerUid, pc);
 
+  /* ДОБАВЛЕНО: наблюдатели и авто-рестарты ICE */
+  setupIceWatchers(peerUid, pc, pairRef, iAmA);
+
   await ensureMicTrack();
   const sender = pc.addTrack(micTrack, myStream);
+
+  /* ДОБАВЛЕНО: умеренный битрейт для Opus — стабильнее на слабых сетях */
+  try {
+    const p = sender.getParameters();
+    if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+    p.encodings[0].maxBitrate = 24000; // ~24 кбит/с на речь
+    await sender.setParameters(p);
+  } catch {}
+
   senders.set(peerUid, sender);
 
   // remote audio + адаптивный VAD
@@ -794,19 +864,29 @@ async function connectToPeer(peerUid){
   }
 }
 
-/* mute/unmute устойчиво — replaceTrack(null / micTrack) */
+/* mute/unmute устойчиво — без замены трека на null, сохраняем RTP keepalive */
 async function toggleMic(){
-  if(micOn){
-    micOn = false; setMicUI();
-    for(const s of senders.values()){ try{ await s.replaceTrack(null);}catch{} }
-  }else{
-    await ensureMicTrack();
-    micOn = true; setMicUI();
-    for(const s of senders.values()){ try{ await s.replaceTrack(micTrack);}catch{} }
-  }
+  await ensureMicTrack();
+  micOn = !micOn;
+  if (micTrack) micTrack.enabled = micOn;
+  setMicUI();
 }
 
 /* выход из звонка */
+async function cleanupMyPairs(){
+  if (!callId) return;
+  try{
+    const pairsSnap = await getDocs(collection(db,'calls',callId,'pairs'));
+    const me = auth.currentUser.uid;
+    for (const d of pairsSnap.docs) {
+      const data = d.data() || {};
+      if (data.a === me || data.b === me) {
+        await deleteDoc(doc(db,'calls',callId,'pairs', d.id));
+      }
+    }
+  }catch{}
+}
+
 async function leaveCallUI(removeMyMember=false){
   try{
     if(removeMyMember && callId){
@@ -818,6 +898,7 @@ async function leaveCallUI(removeMyMember=false){
   pcs.forEach(pc=>pc.close()); pcs.clear();
   senders.clear(); sinks.clear();
   stopTimer();
+  await cleanupMyPairs(); /* ДОБАВЛЕНО: подчистка своих пар сигналинга */
   show('#screen-friends');
   callId=null;
 }
